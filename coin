@@ -1,0 +1,89 @@
+#!/usr/bin/python3
+
+import os, sys, json, datetime
+import urllib.request as urlrqst
+
+def col(n, text):
+    color = {
+        'thin': 2, 'i': 3, 'u': 4, 'neg': 7, 'black': 8, 'strike': 9, 'gr': 30, 'r': 31, 'g': 32, 'y': 33, 'b': 34,
+        'p': 35, 'c': 36, 'w': 37, 'rbg': 41, 'gbg': 42, 'ybg': 43, 'bbg': 44, 'pbg': 45, 'cbg': 46, 'gr2': 90,
+        'r2': 91, 'g2': 92, 'y2': 93, 'b2': 94, 'p2': 95, 'c2': 96, 'grbg2': 100, 'rbg2': 101, 'gbg2': 102,
+        'ybg2': 103, 'bbg2': 104, 'pbg2': 105, 'cbg2': 106, 'n':0
+    }
+    return '\33[{}m{}\33[0m'.format(color[n], text)
+
+
+def posneg(n, text):
+	if n is None:
+		return '<error; input not an int or float>'
+	elif float(n) < 0:
+		return '{}'.format(col('r2', text))
+	elif float(n) > 0:
+		return '{}'.format(col('g2', text))
+	
+
+class coin:
+	def __init__(self, coinname):
+		self.coinname = coinname
+		
+		data = json.loads(urlrqst.urlopen('https://api.coinmarketcap.com/v1/ticker/{}'.format(coinname)).read().decode('utf-8'))
+		
+		self.id = data[0]['id']
+		self.name = data[0]['name']
+		self.symbol = data[0]['symbol']
+		self.rank = data[0]['rank']
+		self.price_usd = float(data[0]['price_usd'])
+		self.price_btc = float(data[0]['price_btc'])
+		self.vol_24h_usd = float(data[0]['24h_volume_usd'])
+		self.market_cap_usd = float(data[0]['market_cap_usd'])
+		self.available_supply = float(data[0]['available_supply'])
+		self.total_supply = float(data[0]['total_supply'])
+		
+		if data[0]['max_supply'] is None:
+			self.max_supply = 0
+		else:
+			self.max_supply = float(data[0]['max_supply'])
+			
+		self.percent_change_1h = float(data[0]['percent_change_1h'])
+		self.percent_change_24h = float(data[0]['percent_change_24h'])
+		self.percent_change_7d = float(data[0]['percent_change_7d'])
+		self.last_updated = datetime.datetime.fromtimestamp(
+			int(data[0]['last_updated'])).strftime('%Y-%m-%d %H:%M:%S')
+		
+
+def display_coin(n):
+	a = coin(sys.argv[1])
+	#top = '\n{}\t${:,.2f}\t{}%'.format(col('y2', '{} ({})'.format(a.name, a.symbol)), a.price_usd, posneg(a.percent_change_24h))
+	top = '\n{}\t{}'.format(col('y2', '{} - {} ({})'.format(a.rank, a.name, a.symbol)),
+				posneg(a.percent_change_24h, '${:,.2f}\t{}%'.format(a.price_usd, a.percent_change_24h)))
+	supply = "{}\t\t{}\n{}\t\t{}\n{}\t{}\n{}\t\t{}\n{}\t\t{}".format(col('thin', 'Market Cap:'),
+							       '${:,.2f}'.format(a.market_cap_usd),
+							       col('thin', '24h Volume:'),
+							       '${:,.2f}'.format(a.vol_24h_usd),
+							       col('thin', 'Available Supply:'),
+							       '{:,.2f}'.format(a.available_supply),
+							       col('thin', 'Total Supply:'),
+							       '{:,.2f}'.format(a.total_supply),
+							       col('thin', 'Max Supply:'),
+							       '{:,.2f}'.format(a.max_supply)
+							      )
+	change = '{}\t\t{}\n{}\t\t{}\n{}\t\t{}'.format(
+		col('thin', 'Change 1h:'),
+		posneg(a.percent_change_1h, '{}%'.format(a.percent_change_1h)),
+		col('thin', 'Change 24h:'),
+		posneg(a.percent_change_24h, '{}%'.format(a.percent_change_24h)),
+		col('thin', 'Change 7d:'),
+		posneg(a.percent_change_7d, '{}%'.format(a.percent_change_7d))
+	)
+	updated = '{}\t\t{}'.format(
+		col('thin', 'Last Updated:'),
+		a.last_updated
+	)
+	return '{}\n{}\n{}\n{}\n'.format(top, supply, change, updated)
+
+
+if len(sys.argv) < 2:
+	print('\nOops! You need to provide a coin name.\n\n\tExamples:\n\t\tbitcoin\n\t\tethereum\n\t\tlitecoin\n\t\tripple\n')
+else:
+	print(display_coin(sys.argv[1]))
+
