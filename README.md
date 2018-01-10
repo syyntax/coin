@@ -25,3 +25,5 @@ sudo chmod +x /usr/local/bin/coin
 ```python
 coin bitcoin
 ```
+
+![Snapshot](https://image.prntscr.com/image/TVfvDYC3RU2uD6fthdh-UQ.png "Snapshot")
